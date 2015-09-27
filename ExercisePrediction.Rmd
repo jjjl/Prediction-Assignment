@@ -1,0 +1,60 @@
+---
+title: "ExercisePrediction"
+author: "J. L."
+date: "Saturday, September 26, 2015"
+output: html_document
+---
+
+## Outline
+
+We analyze labeled data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants by using a machine learning algorithm to predict the class of behavior on 20 test cases.
+
+## Train Model from Data
+
+First we load the data and remove irrelevant and NA columns.
+
+```{r}
+training<-read.csv('pml-training.csv')
+testing<-read.csv('pml-testing.csv')
+keep <- !is.na(testing[1,])
+keep[1:7] <- FALSE
+training <- training[, keep]
+testing <- testing[, keep]
+```
+
+Before training we preprocess the variables with centering and scaling. We use a classification a tree algorithm and bootstrap with random forest to reduce bias.
+
+```{r}
+library(caret)
+modelFit <- train(classe ~ ., data = training, preProcess = c("center", "scale"), method = "rf")
+modelFit
+```
+
+Cross validation is done by random forest training method already, and its estimate of the out of sample error is shown in the final model under OOB estimate of error rate as 0.43%.
+```{r}
+modelFit$finalModel
+```
+
+## Predict from the Model
+
+We show the prediction of the model and produce the files for submission.
+
+```{r}
+pred <- predict(modelFit, testing)
+pred
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+pml_write_files(pred)
+```
+
+
+## Acknowledgment
+
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+
+Read more: http://groupware.les.inf.puc-rio.br/har#ixzz3mqhhtEwj
